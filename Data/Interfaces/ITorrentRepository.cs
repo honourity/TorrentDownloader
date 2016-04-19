@@ -4,6 +4,6 @@ namespace Data.Interfaces
 {
     public interface ITorrentRepository
     {
-        Torrents GetTorrents(Configuration config);
+        TorrentSource GetTorrents(Configuration config);
     }
 }
