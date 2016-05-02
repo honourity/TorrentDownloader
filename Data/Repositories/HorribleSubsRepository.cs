@@ -27,10 +27,20 @@ namespace Data.Repositories
             foreach (string show in config.Shows)
             {
                 var item = GetTorrentItemByShowName(show);
-                torrentData.TorrentItems.Add(item);
+                
+                torrentData.TorrentItems.Add(GetTorrentsByHorribleSubsOutput(item));
             }
 
             return torrentData;
+        }
+
+        private TorrentItem GetTorrentsByHorribleSubsOutput(HorribleSubsOutput data)
+        {
+            TorrentSource output = new TorrentItem();
+
+            output.DateCreated = data.
+
+            return output;
         }
 
         private HtmlDocument GetHtmlByShowName(string show)
@@ -39,7 +49,9 @@ namespace Data.Repositories
 
             //fetching search results html
             string url = @"http://horriblesubs.info/lib/search.php?value=" + Uri.EscapeDataString(show);
-            string htmlText = null;
+            string htmlText = File.ReadAllText(@"C:\Users\jtcgreyfox\Desktop\search.php.html");
+            //string htmlText = null;
+
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
             HttpWebResponse response = (HttpWebResponse)request.GetResponse();
             if (response.StatusCode == HttpStatusCode.OK)
@@ -65,46 +77,95 @@ namespace Data.Repositories
             return doc;
         }
 
-        private TorrentItem GetTorrentItemByShowName(string show)
+        private HorribleSubsOutput GetTorrentItemByShowName(string show)
         {
-            //replace this implementation
-            //HtmlAgilityPack
-            //sizzle selectors
-            //use jquery
-            //worst case, use xpath
+            HorribleSubsOutput output = new HorribleSubsOutput();
+            output.DateRetrived = DateTime.Now;
+            output.InputParams = show;
 
-            var item = new TorrentItem();
-            item.Links = new Dictionary<string, string>();
+            output.Items = new List<HorribleSubsItem>();
 
             var html = GetHtmlByShowName(show);
 
-            var tables = html.DocumentNode.Descendants("table").Where(x => x.Attributes.Contains("class") && x.Attributes["class"].Value.Contains("release-info"));
+            //get episode name from:
+            //table class="release-info"
+            //   tr id =[episode name]
+            List<string> episodeNameList = new List<string>();
 
-            foreach(HtmlNode table in tables)
+            var episodeNamesTable = html.DocumentNode.Descendants("table").Where(x => x.Attributes.Contains("class") && x.Attributes["class"].Value.Contains("release-info"));
+            foreach(HtmlNode row in episodeNamesTable)
             {
-                //<tr> where exists attribute "id"
-                //store id as episode name
-                //class="release-links naruto-shippuuden-455-480p"
+                var episodeName = row.Descendants("tr").First().Attributes["id"].Value;
+                char[] splitters = new char[2];
+                splitters[0] = '(';
+                splitters[1] = ')';                
+                episodeNameList.Add(episodeName);
 
-                string episodeName = table.FirstChild.FirstChild;
-                table.Attributes
-            }
+                HorribleSubsItem episodeItem = new HorribleSubsItem();
+                episodeItem.Name = episodeName;
+                episodeItem.DateCreated = DateTime.ParseExact(row.Descendants("tr").First().InnerText.Split(splitters)[1], "MM/dd/yy", System.Globalization.CultureInfo.InvariantCulture);
 
-            foreach (HtmlNode node in html.DocumentNode.SelectNodes("//div[@class=\"episode\"]"))
-            {
-                var magnetUrl = node.LastChild.FirstChild.LastChild.ChildNodes[2].FirstChild.Attributes.First();
-                string pattern = @"\((.+)\)";
-                var thing = Regex.Match(node.FirstChild.InnerText, pattern);
-                DateTime date = DateTime.ParseExact(thing.Value.Trim('(', ')'), "MM/dd/yy", _config.Provider);
-
-                if (date >= _config.Date)
+                var episodeLinkNodes = html.DocumentNode.Descendants("div").Where(x => x.Attributes.Contains("class") && x.Attributes["class"].Value.Contains("release-links " + episodeName));
+                foreach (HtmlNode node in episodeLinkNodes)
                 {
-                    item.Links.Add();
-                    torrents.TorrentFileLinks.Add(magnetUrl.Value);
+                    var episodeFormatSize = node.Attributes["class"].Value.Replace("release-links " + episodeName + "-", "");
+                    var episodeDownloadLink = node.Descendants().Where(a => a.Attributes.Contains("href") && a.Attributes["href"].Value.Contains("www.nyaa.se")).First().Attributes["href"].Value;
+
+                    episodeItem.Links.Add(episodeFormatSize, episodeDownloadLink);
                 }
+
+                output.Items.Add(episodeItem);
             }
 
-            return item;
+            ////foreach (string episode in episodeNameList)
+            ////{
+                
+            ////}
+
+            ////get list of all:
+            ////div class="release-links"
+
+            ////get:
+            ////subset of list, where div class="[episode name]-[size]"
+
+            ////get:
+            ////table class="release-table"
+            ////tbody
+            ////tr
+            ////td class="dl-type"
+            ////span class="dl-link"
+            ////a href
+
+
+            ////var tables = html.DocumentNode.Descendants("table").Where(x => x.Attributes.Contains("class") && x.Attributes["class"].Value.Contains("release-info"));
+
+            ////foreach(HtmlNode table in tables)
+            ////{
+            ////    var episodeChildren = table.Descendants("tr").Where(x => x.Attributes.Contains("class") && x.Attributes["class"].Value.Contains("release-table"));
+
+            ////    //<tr> where exists attribute "id"
+            ////    //store id as episode name
+            ////    //class="release-links naruto-shippuuden-455-480p"
+
+            ////    //string episodeName = table.FirstChild.FirstChild;
+            ////    //table.Attributes
+            ////}
+
+            ////foreach (HtmlNode node in html.DocumentNode.SelectNodes("//div[@class=\"episode\"]"))
+            ////{
+            ////    var magnetUrl = node.LastChild.FirstChild.LastChild.ChildNodes[2].FirstChild.Attributes.First();
+            ////    string pattern = @"\((.+)\)";
+            ////    var thing = Regex.Match(node.FirstChild.InnerText, pattern);
+            ////    DateTime date = DateTime.ParseExact(thing.Value.Trim('(', ')'), "MM/dd/yy", _config.Provider);
+
+            ////    if (date >= _config.Date)
+            ////    {
+            ////        //item.Links.Add();
+            ////        //torrents.TorrentFileLinks.Add(magnetUrl.Value);
+            ////    }
+            ////}
+
+            return output;
         }
     }
 }

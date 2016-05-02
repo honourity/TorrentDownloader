@@ -11,5 +11,7 @@ namespace Data.Models
         public CultureInfo Provider { get; internal set; }
 
         public List<string> Shows { get; set; }
+
+        public string Size { get; set; }
     }
 }

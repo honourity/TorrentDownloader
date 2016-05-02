@@ -27,6 +27,8 @@ namespace Data.Repositories
             //read shows into list
             this._config.Shows = File.ReadAllLines("Config\\shows.txt").ToList();
 
+            this._config.Size = "720p";
+
             return this._config;
         }
 

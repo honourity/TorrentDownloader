@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using Data.Interfaces;
+using Data.Models;
 
 namespace HorribleSubsDownloader
 {
@@ -13,9 +14,9 @@ namespace HorribleSubsDownloader
             ITorrentRepository torrentRepository = new Data.Repositories.HorribleSubsRepository();
             var torrentData = torrentRepository.GetTorrents(config);
 
-            foreach (string link in torrentData.TorrentFileLinks)
+            foreach (TorrentItem item in torrentData.TorrentItems)
             {
-                Process.Start(link);
+                Process.Start(item.Links[config.Size]);
             }
             
             configRepository.UpdateLastRunDate();
