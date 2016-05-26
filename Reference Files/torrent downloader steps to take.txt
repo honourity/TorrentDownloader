@@ -1,0 +1,17 @@
+get episode name from:
+table class="release-info"
+   tr id=[episode name]
+
+get list of all:
+div class="release-links"
+
+get:
+subset of list, where div class="[episode name]-[size]"
+
+get:
+table class="release-table"
+tbody
+tr
+td class="dl-type"
+span class="dl-link"
+a href
